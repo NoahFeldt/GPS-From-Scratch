@@ -1,4 +1,4 @@
-# GPS
+# GPS-From-Scratch
 
 A project that aims to implement satellite navigation from scratch. 
 
