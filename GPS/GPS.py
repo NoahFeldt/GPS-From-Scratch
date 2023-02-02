@@ -21,9 +21,9 @@ def run():
             message = RTCM1019(parsed_data)
             # message.print_values()
 
-            pos = sat_position(message)
-            print(pos)
-            input()
+            # pos = sat_position(message)
+            # print(pos)
+            # input()
 
 if __name__ == "__main__":
     run()

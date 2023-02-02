@@ -7,6 +7,9 @@ class RTCM1002:
         # number of satellites in message
         self.num_satellites: int = message.DF006
 
+        # Time in GPS week (seconds)
+        self.time_of_week: float = message.DF004 / 1000
+
         # list of satellite identification numbers
         self.svs = []
 
@@ -70,6 +73,7 @@ class RTCM1002:
         print(f"rem: {self.reminders}")
         print(f"amb: {self.ambiguities}")
         print(f"prs: {self.pseudoranges}")
+        print(f"tow: {self.time_of_week}")
 
 class RTCM1006:
     def __init__(self, message: RTCMMessage) -> None:
@@ -103,6 +107,15 @@ class RTCM1019:
         # Argument of periapsis (radians)
         self.argument_of_periapsis: float = message.DF099 * math.pi
 
+        # Week number since last GPS epoch (weeks)
+        self.week_number: int = message.DF076
+
+        # Time of week (seconds)
+        self.time_of_week: int = message.DF081
+
+        # Time since last GPS epoch (seconds)
+        self.time_since_epoch: int = self.week_number * 604800 + self.time_of_week
+
     # prints values of the message for debugging purposes
     def print_values(self) -> None:
         print(f"sv: {self.sv}")
@@ -112,3 +125,5 @@ class RTCM1019:
         print(f"a: {self.semi_major_axis}")
         print(f"OMEGA: {self.longitude_of_ascending_node}")
         print(f"omega: {self.argument_of_periapsis}")
+        print(f"week: {self.week_number}")
+        print(f"toe: {self.time_of_week}")
