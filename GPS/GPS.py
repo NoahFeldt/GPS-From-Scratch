@@ -1,29 +1,19 @@
-from pyrtcm import RTCMReader
-
 from RTCM import *
 from Orbits import *
+from Satellites import *
+from Parsing import *
+from Plotting import *
 
 def run():
-    # read RTCM data stream from file
-    stream = open(r'Data\rtcmdata.log', 'rb')
+    # Path to RTCM data 
+    data_path = r"Data\rtcmdata.log"
 
-    # create reader
-    rtr = RTCMReader(stream)
+    # Reads and parses RTCM data
+    (messages1002, messages1019) = parse_data(data_path)
 
-    # parse messages
-    for (raw_data, parsed_data) in rtr:
-        
-        if parsed_data.identity == "1002":
-            message = RTCM1002(parsed_data)
-            # message.print_values()
+    gps_list = sort_gps(messages1002, messages1019)
 
-        elif parsed_data.identity == "1019":
-            message = RTCM1019(parsed_data)
-            # message.print_values()
-
-            # pos = sat_position(message)
-            # print(pos)
-            # input()
+    plot_pseudoranges(gps_list)
 
 if __name__ == "__main__":
     run()

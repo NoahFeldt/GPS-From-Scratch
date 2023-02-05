@@ -108,13 +108,13 @@ class RTCM1019:
         self.argument_of_periapsis: float = message.DF099 * math.pi
 
         # Week number since last GPS epoch (weeks)
-        self.week_number: int = message.DF076
+        self.week_number: float = message.DF076
 
         # Time of week (seconds)
-        self.time_of_week: int = message.DF081
+        self.time_of_week: float = message.DF081
 
         # Time since last GPS epoch (seconds)
-        self.time_since_epoch: int = self.week_number * 604800 + self.time_of_week
+        self.time_since_epoch: float = self.week_number * 604800 + self.time_of_week
 
     # prints values of the message for debugging purposes
     def print_values(self) -> None:
