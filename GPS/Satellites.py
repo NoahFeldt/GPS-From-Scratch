@@ -1,15 +1,125 @@
+import numpy as np
+from Constants import *
+
 # Class containing information collected from a specific GPS satellite
 class GPSSatellite:
+    # Constructor
     def __init__(self, pseudoranges, times_of_pseudoranges, eccentricities, inclinations, mean_anomalies, semi_major_axes, longitudes_of_ascending_node, arguments_of_periapsis, times_of_ephemeris) -> None:
+        # Identification number of satellite
         self.sv: int
 
-        self.pseudoranges: list[float] = pseudoranges
-        self.times_of_pseudoranges: list[float] = times_of_pseudoranges
+        # Distances to receiver (meters)
+        self.pseudoranges: np.ndarray = np.array(pseudoranges)
 
-        self.eccentricities: list[float] = eccentricities
-        self.inclinations: list[float] = inclinations
-        self.mean_anomalies: list[float] = mean_anomalies
-        self.semi_major_axes: list[float] = semi_major_axes
-        self.longitudes_of_ascending_node: list[float] = longitudes_of_ascending_node
-        self.arguments_of_periapsis: list[float] = arguments_of_periapsis
-        self.times_of_ephemeris: list[float] = times_of_ephemeris
+        # Time of pseudorange measurements
+        self.times_of_pseudoranges: np.ndarray = np.array(times_of_pseudoranges)
+
+        # Eccentricity of satellite orbit
+        self.eccentricities: np.ndarray = np.array(eccentricities)
+
+        # Inclination
+        self.inclinations: np.ndarray = np.array(inclinations)
+
+        # Mean anomaly
+        self.mean_anomalies: np.ndarray = np.array(mean_anomalies)
+
+        # Semi major axis
+        self.semi_major_axes: np.ndarray = np.array(semi_major_axes)
+
+        # Longitude of ascending nodes
+        self.longitudes_of_ascending_node: np.ndarray = np.array(longitudes_of_ascending_node)
+
+        # Argument of peripsis
+        self.arguments_of_periapsis: np.ndarray = np.array(arguments_of_periapsis)
+
+        # Time of ephemeris measurement
+        self.times_of_ephemeris: np.ndarray = np.array(times_of_ephemeris)
+
+    # Calculates true anomaly of satellite
+    def true_anomaly(self, time_differences: np.ndarray) -> np.ndarray:
+        # calculate mean motion, n (degrees / s)
+        mean_motion = np.sqrt(MU / self.semi_major_axes[0] ** 3)
+
+        # calculate new mean anomaly after some time difference
+        mean_anomaly = self.mean_anomalies[0] + mean_motion * time_differences
+
+        # true anomaly approximation (https://en.wikipedia.org/wiki/True_anomaly#From_the_eccentric_anomaly)
+        true_anomaly = mean_anomaly + (2 * self.eccentricities[0] - 1/4 * self.eccentricities[0] ** 3) * np.sin(mean_anomaly) + 5/4 * self.eccentricities[0] ** 2 * np.sin(2 * mean_anomaly) + 13/12 * self.eccentricities[0] * np.sin(3 * mean_anomaly)
+
+        return true_anomaly
+
+    # Calculates satellite position coordinates in the perifocal reference system
+    def perifocal_reference_coordinates(self, true_anomalies: np.ndarray) -> np.ndarray:
+        semi_minor_axis = self.semi_major_axes[0] * np.sqrt(1 - self.eccentricities[0] ** 2)
+
+        # calculate coordinates on ellipse
+        p = self.semi_major_axes[0] * np.cos(true_anomalies)
+        q = semi_minor_axis * np.sin(true_anomalies)
+        w = np.zeros(p.shape)
+
+        # PQW coordinates
+        pqw = np.dstack([p, q, w])[0]
+
+        return pqw
+
+    # Converts the perifocal reference coordinates to earth centered inertial coordinates
+    def earth_centered_initial(self, pqw: np.ndarray) -> np.ndarray:
+        # first rotation matrix around z-axis
+        Rz = np.matrix([
+            [np.cos(-self.longitudes_of_ascending_node[0]), -np.sin(-self.longitudes_of_ascending_node[0]), 0],
+            [np.sin(-self.longitudes_of_ascending_node[0]), np.cos(-self.longitudes_of_ascending_node[0]), 0],
+            [0, 0, 1]
+        ])
+
+        # perform first rotation
+        pqw_r1 = np.matmul(pqw, Rz)
+
+        # second rotation matrix around x-axis
+        Rx = np.matrix([
+            [1, 0, 0],
+            [0, np.cos(-self.inclinations[0]), -np.sin(-self.inclinations[0])],
+            [0, np.sin(-self.inclinations[0]), np.cos(-self.inclinations[0])]
+        ])
+
+        # perform second rotation
+        pqw_r2 = np.matmul(pqw_r1, Rx)
+
+        # third rotation matrix around z-axis
+        Rz = np.matrix([
+            [np.cos(-self.arguments_of_periapsis[0]), -np.sin(-self.arguments_of_periapsis[0]), 0],
+            [np.sin(-self.arguments_of_periapsis[0]), np.cos(-self.arguments_of_periapsis[0]), 0],
+            [0, 0, 1]
+        ])
+
+        # perform third rotation
+        pqw_r3 = np.matmul(pqw_r2, Rz)
+
+        return pqw_r3
+
+    # Converts the centered inertial coordinates to earth centered earth fixed coordinates
+    def earth_centered_earth_fixed(self, eci: np.ndarray, theta: float) -> np.ndarray:
+        # rotation matrix from vernal equinox to Greenwich
+        Rz = np.matrix([
+            [np.cos(theta), -np.sin(theta), 0],
+            [np.sin(theta), np.cos(theta), 0],
+            [0, 0, 1]
+        ])
+
+        # perform rotation to ecef
+        ecef = np.matmul(eci, Rz)
+
+        return ecef
+
+    # Calculate satellite position for every pseudorange measurement
+    def position(self):
+        time_differences = self.times_of_pseudoranges - self.times_of_ephemeris[0]
+
+        true_anomalies = self.true_anomaly(time_differences)
+
+        pqw = self.perifocal_reference_coordinates(true_anomalies)
+
+        eci = self.earth_centered_initial(pqw)
+
+        return eci
+
+        # return ecef
