@@ -97,21 +97,46 @@ class GPSSatellite:
         return pqw_r3
 
     # Converts the centered inertial coordinates to earth centered earth fixed coordinates
-    def earth_centered_earth_fixed(self, eci: np.ndarray, theta: float) -> np.ndarray:
-        # rotation matrix from vernal equinox to Greenwich
-        Rz = np.matrix([
-            [np.cos(theta), -np.sin(theta), 0],
-            [np.sin(theta), np.cos(theta), 0],
-            [0, 0, 1]
-        ])
+    def earth_centered_earth_fixed(self, eci: np.ndarray) -> np.ndarray:
 
-        # perform rotation to ecef
-        ecef = np.matmul(eci, Rz)
+        ecefs = []
+
+        for i in range(0, len(self.times_of_pseudoranges)):
+            # calculates angle based on soloar day (not sidirial day) 
+            # needs to be fixed in the future
+            theta = self.times_of_pseudoranges[i] / 86400 % 1 * 2 * np.pi
+
+            # rotation matrix from vernal equinox to Greenwich
+            Rz = np.matrix([
+                [np.cos(-theta), -np.sin(-theta), 0],
+                [np.sin(-theta), np.cos(-theta), 0],
+                [0, 0, 1]
+            ])
+
+            # perform rotation to ecef
+            ecef = np.matmul(eci[i], Rz)
+
+            ecefs.append(np.copy(ecef)[0])
+
+        ecefs = np.array(ecefs)
+
+        return ecefs
+
+    # Calculate satellite position for every pseudorange measurement
+    def position_ecef(self):
+        time_differences = self.times_of_pseudoranges - self.times_of_ephemeris[0]
+
+        true_anomalies = self.true_anomaly(time_differences)
+
+        pqw = self.perifocal_reference_coordinates(true_anomalies)
+
+        eci = self.earth_centered_initial(pqw)
+
+        ecef = self.earth_centered_earth_fixed(eci)
 
         return ecef
 
-    # Calculate satellite position for every pseudorange measurement
-    def position(self):
+    def position_eci(self):
         time_differences = self.times_of_pseudoranges - self.times_of_ephemeris[0]
 
         true_anomalies = self.true_anomaly(time_differences)
@@ -121,5 +146,3 @@ class GPSSatellite:
         eci = self.earth_centered_initial(pqw)
 
         return eci
-
-        # return ecef
