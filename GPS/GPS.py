@@ -12,13 +12,12 @@ def run():
 
     gps_list = sort_gps(messages1002, messages1019)
 
-    trilat(gps_list)
+    # trilat(gps_list)
 
-    # plot_eci_and_ecef(gps_list[4])
-
-    # plot_orbits(gps_list)
-
-
+    plot_pseudoranges([gps_list[4]])
+    plot_orbits_eci([gps_list[4]])
+    plot_orbits_ecef([gps_list[4]])
+    plot_eci_and_ecef(gps_list[4])
 
 if __name__ == "__main__":
     run()

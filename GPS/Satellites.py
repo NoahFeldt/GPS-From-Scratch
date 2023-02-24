@@ -124,13 +124,7 @@ class GPSSatellite:
 
     # Calculate satellite position for every pseudorange measurement
     def position_ecef(self):
-        time_differences = self.times_of_pseudoranges - self.times_of_ephemeris[0]
-
-        true_anomalies = self.true_anomaly(time_differences)
-
-        pqw = self.perifocal_reference_coordinates(true_anomalies)
-
-        eci = self.earth_centered_initial(pqw)
+        eci = self.position_eci()
 
         ecef = self.earth_centered_earth_fixed(eci)
 

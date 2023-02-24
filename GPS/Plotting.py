@@ -5,18 +5,7 @@ from Satellites import *
 
 plt.style.use("Solarize_Light2")
 
-def plot_pseudorange(sat: GPSSatellite):
-    ax = plt.axes()
-
-    plt.xlabel("Time of week (s)")
-    plt.ylabel("Pseudorange (km)")
-
-    ax.ticklabel_format(style='plain')
-
-    plt.scatter(sat.times_of_pseudoranges, np.array(sat.pseudoranges) / 1000)
-
-    plt.show()
-
+# Plots pseudoranges of satellites
 def plot_pseudoranges(sats: list[GPSSatellite]):
     ax = plt.axes()
 
@@ -30,7 +19,8 @@ def plot_pseudoranges(sats: list[GPSSatellite]):
 
     plt.show()
 
-def plot_orbit(sats: GPSSatellite):
+# Plots the satellite orbits in the Earth Centered Inertial (ECI) reference frame
+def plot_orbits_eci(sats: list[GPSSatellite]):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
 
@@ -40,13 +30,15 @@ def plot_orbit(sats: GPSSatellite):
     ax.set_ylabel('Y (km)')
     ax.set_zlabel('Z (km)')
 
-    eci = sats.position() / 1000
-
-    ax.scatter(eci[:, 0], eci[:, 1], eci[:, 2])
+    for i in range(0, len(sats)):
+        eci = sats[i].position_ecef() / 1000
+        
+        ax.scatter(eci[:, 0], eci[:, 1], eci[:, 2])
 
     plt.show()
 
-def plot_orbits(sats: list[GPSSatellite]):
+# Plots the satellite orbits in the Earth Centered Earth Fixed (ECEF) reference frame
+def plot_orbits_ecef(sats: list[GPSSatellite]):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
 
@@ -79,6 +71,7 @@ def plot_tris(tris):
 
     plt.show()
 
+# Plots ECI and ECEF orbits to compare the shift from rotation of earth
 def plot_eci_and_ecef(sat: GPSSatellite):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
